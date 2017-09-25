@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.example</groupId>
+	<artifactId>dockerdemo</artifactId>
+	<version>0.0.1</version>
+	<packaging>jar</packaging>
+
+
+	<name>dockerdemo</name>
+	<description>Demo project for Spring Boot</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.4.3.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<!-- 项目变量声明 -->
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+		<docker.repostory>10.0.0.78:5000</docker.repostory>
+		<docker.registry.name>test</docker.registry.name>
+	</properties>
+
+	<!-- 项目依赖 -->
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<!-- 目标构建 -->
+	<build>
+		<resources><!-- 输出Dockerfile至docker文件夹 -->
+			<resource>
+				<directory>src/main/docker</directory>
+				<filtering>true</filtering>
+				<includes>
+	    			<include>**/Dockerfile</include>
+				</includes>
+				<targetPath>../docker</targetPath>
+			</resource>
+		</resources>
+		<plugins>
+
+			<plugin><!-- 置顶 -->
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+
+			<!--<plugin>-->
+				<!--<groupId>pl.project13.maven</groupId>-->
+				<!--<artifactId>git-commit-id-plugin</artifactId>-->
+				<!--<version>2.2.0</version>-->
+				<!--<executions>-->
+					<!--<execution>-->
+						<!--<goals>-->
+							<!--<goal>revision</goal>-->
+						<!--</goals>-->
+					<!--</execution>-->
+				<!--</executions>-->
+				<!--<configuration>-->
+					<!--<dateFormatTimeZone>${user.timezone}</dateFormatTimeZone>-->
+					<!--<verbose>true</verbose>-->
+				<!--</configuration>-->
+			<!--</plugin>-->
+
+			<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.4.13</version>
+				<executions>
+					<!-- 1 -->
+				    <execution>
+				        <phase>package</phase>
+				        <goals>
+				            <goal>build</goal>
+				        </goals>
+				    </execution>
+					<!-- 2 -->
+				    <execution>
+						<id>tag-image</id>
+						<phase>package</phase>
+						<goals>
+							<goal>tag</goal>
+						</goals>
+						<configuration>
+							<image>${docker.repostory}/${docker.registry.name}/${project.artifactId}:${project.version}</image>
+							<newName>${docker.repostory}/${docker.registry.name}/${project.artifactId}:${project.version}</newName>
+						</configuration>
+				    </execution>
+					<!-- 3 -->
+				    <execution>
+						<id>push-image</id>
+						<phase>install</phase>
+						<goals>
+							<goal>push</goal>
+						</goals>
+						<configuration>
+							<imageName>${docker.repostory}/${docker.registry.name}/${project.artifactId}:${project.version}</imageName>
+						</configuration>
+				    </execution>    
+				</executions>
+
+				<configuration>
+					<serverId>docker-test</serverId>
+                    <registryUrl>https://10.0.0.78:5000/</registryUrl>
+					<forceTags>true</forceTags>
+					<pushImage>true</pushImage>
+				    <dockerDirectory>target/docker</dockerDirectory>
+			     	<imageName>
+        				${docker.repostory}/${docker.registry.name}/${project.artifactId}:${project.version}
+    				</imageName>
+    				<imageTags>
+    					<!--<imageTag>${git.commit.id.abbrev}</imageTag>-->
+    					<imageTag>latest</imageTag>
+    				</imageTags>
+    				<resources>
+						<rescource><!-- 将打包文件放入dockerDirectory指定的位置 -->
+                   			<targetPath>/</targetPath>
+                   			<directory>${project.build.directory}</directory>
+                   			<include>${project.build.finalName}.jar</include>
+               			</rescource>
+    				</resources>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
